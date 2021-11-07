@@ -1,0 +1,101 @@
+---
+title: "Aziz"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+```
+
+```{r}
+data <- read.csv("Data/uk_used_cars.csv")
+str(data)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(data, aes(x=Car.Make))+
+  geom_bar(width=0.7, fill="steelblue")+
+scale_x_discrete(labels = abbreviate)+
+  labs(title = "Car Make Distribution plot")+
+  theme_minimal()
+
+print(table(data$Car.Make))
+
+```
+
+# Notes: 
+Join Merecedes and mercedes c class, Same for Ford and Ford Focus
+
+top Mercedes and ford, lowest Skoda, Toyota and Hyndai)
+```{r}
+ggplot(data, aes(x=transmission))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Transmission Distribution plot")+
+  theme_minimal()
+print(table(data$transmission))
+```
+
+# Notes 
+Most cars are Automatic
+```{r}
+ggplot(data, aes(x=fuelType))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Fuel Type Distribution plot")+
+  theme_minimal()
+print(table(data$fuelType))
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+
+print(mean(data$price))
+print(sd(data$price))
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=tax, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Tax Box Plot Per Car Make")+
+  theme_minimal()
+
+print(sum(is.na (data$tax)))
+
+```
+
+# Notes 
+All tax missing values are in Mercedes Cclass annd Ford Focus for years 2019-2020
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=mileage, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MileageBox Plot Per Car Make")+
+  theme_minimal()
+
+print(mean(data$mileage))
+print(sd(data$mileage))
+```
+
+```{r}
+ks.test(data$tax, "pnorm") 
+ks.test(data$mpg, "pnorm") 
+
+```
+
+```{r}
+#cols <- c("mileage","tax", "mpg", "engineSize")
+#X <-data[cols]
+#library(mctest)
+#omcdiag(x=X,y= data$price)
+
+```
+
