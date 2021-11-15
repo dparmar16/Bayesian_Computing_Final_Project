@@ -15,6 +15,15 @@ str(data)
 ```
 
 ```{r}
+print(table(data$year))
+data<- data[!(data$year== 2060),]
+print(table(data$model))
+```
+# Notes
+Remove data prior to 2007? 2013?
+
+
+```{r}
 library(ggplot2)
 
 ggplot(data, aes(x=Car.Make))+
@@ -49,6 +58,8 @@ ggplot(data, aes(x=fuelType))+
 print(table(data$fuelType))
 ```
 
+
+
 ```{r}
 ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
   geom_boxplot()+
@@ -71,6 +82,17 @@ print(sum(is.na (data$tax)))
 
 ```
 
+```{r}
+ggplot(data, (aes(x=price, y=tax))) +
+stat_binhex(colour="white") +
+theme_bw() +
+scale_fill_gradient(low="white", high="black") +
+labs(x="Car Price", y="Tax")
+```
+
+
+
+
 # Notes 
 All tax missing values are in Mercedes Cclass annd Ford Focus for years 2019-2020
 
@@ -84,18 +106,39 @@ ggplot(data, aes(x=Car.Make, y=mileage, color=Car.Make)) +
 print(mean(data$mileage))
 print(sd(data$mileage))
 ```
+```{r}
+ggplot(data, aes(x=Car.Make, y=mpg, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MPG Box Plot Per Car Make")+
+  theme_minimal()
+
+
+```
+
+
+```{r}
+mercedes_C<- data[(data$Car.Make == "Mercedes C Class"),]
+mercedes <-data[(data$Car.Make == "Mercedes")& (data$model == " C Class"),]
+str(mercedes)
+
+print(table(mercedes$year))
+print(mean(mercedes$price))
+print(sd(mercedes$price))
+boxplot(mercedes$price)
+
+
+```
+```{r}
+str(mercedes_C)
+print(table(mercedes_C$year))
+print(mean(mercedes_C$price))
+print(sd(mercedes_C$price))
+boxplot(mercedes_C$price)
+```
 
 ```{r}
 ks.test(data$tax, "pnorm") 
 ks.test(data$mpg, "pnorm") 
-
-```
-
-```{r}
-#cols <- c("mileage","tax", "mpg", "engineSize")
-#X <-data[cols]
-#library(mctest)
-#omcdiag(x=X,y= data$price)
-
 ```
 
