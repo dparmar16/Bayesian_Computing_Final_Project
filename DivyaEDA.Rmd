@@ -1,0 +1,98 @@
+---
+title: "DivyaEDA"
+author: "Divya Parmar"
+date: "11/17/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read the data and get column values.
+
+```{r}
+data <- read.csv("Data/uk_used_cars.csv")
+str(data)
+```
+
+## Price plot has a long right tail, but has a rough bell curve shape.
+
+```{r pressure, echo=FALSE}
+hist(data$price, breaks=c(seq.int(0, 200) * 1000))
+```
+
+## Idea 
+
+Build hierarchical model on Maker and Model.
+
+## Task
+
+1. Drop missing values.
+
+2. Look at quartiles of sale price by car maker to get prior.
+
+3. Look at quartiles of sale price by car model for each car maker to get prior.
+
+4. Create multi-level model from maker --> model --> price. 
+
+## Look at mean of price by car maker and model. Code taken from Aziz's work. 
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+
+print(mean(data$price))
+print(sd(data$price))
+```
+## Create dataframe of mean by car-make and plot as histogram.
+
+Goal is to get sense of distribution. Then we can fit a prior to this in the hierarchical model.
+
+```{r}
+library(dplyr)
+
+data %>% 
+  group_by(Car.Make) %>%
+  summarise_at(vars(price), list(mean = mean))
+```
+
+```{r}
+library(dplyr)
+
+df_ex <- data %>% 
+  group_by(Car.Make) %>%
+  summarise_at(vars(price), list(mean = mean))
+```
+
+```{r}
+library(dplyr)
+
+hist(df_ex$mean, breaks=20)
+```
+
+## Look at distribution of mean price within each car maker (broken out by model).
+
+```{r}
+
+car_makers_unique = unique(data$Car.Make)
+
+for (car in car_makers_unique) {
+  subset_car <- subset(data, data$Car.Make == car)
+  
+  df_sub <- subset_car %>%
+    group_by(model) %>%
+    summarise_at(vars(price), list(mean = mean))
+
+  hist(df_sub$mean, breaks=10, main = paste("Mean sale price by model of", car))  
+}
+
+```
+
+
+## Next steps - identify priors for hierarchical model.
