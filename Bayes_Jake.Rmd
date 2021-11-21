@@ -1,0 +1,271 @@
+---
+title: "Jake_Bayes_Project"
+author: "Jake Lieberfarb"
+date: "11/7/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  pkg <- ifelse(!character.only, as.character(substitute(pkg)) , pkg)  
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(substitute(pkg),dep=T); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.csv("/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/uk_used_cars.csv")
+str(data)
+summary(data)
+# 9353 NA values need to remove them 
+nrow(data) # 108540 rows with NA values
+data_clean <- data[complete.cases(data), ] # removes NA values, rename as 'data_clean'
+
+head(data_clean) # check to see if NA values are removed 
+nrow(data_clean) #99187 rows with no NA values 
+x <- (1-nrow(data_clean)/nrow(data))* 100
+x # 8.62% of the data had na values
+```
+
+```{r}
+library(ggplot2)
+ggplot(data, aes(x=Car.Make)) +
+  geom_bar(width=0.7, fill="steelblue")+
+scale_x_discrete(labels = abbreviate)+
+  labs(title = "Car Make Distribution plot")+
+  theme_minimal()
+print(table(data$Car.Make))
+```
+
+# Notes: 
+Join Merecedes and mercedes c class, Same for Ford and Ford Focus
+
+top Mercedes and ford, lowest Skoda, Toyota and Hyndai)
+```{r}
+ggplot(data, aes(x=transmission))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Transmission Distribution plot")+
+  theme_minimal()
+print(table(data$transmission))
+```
+
+# Notes 
+Most cars are Automatic
+```{r}
+ggplot(data, aes(x=fuelType))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Fuel Type Distribution plot")+
+  theme_minimal()
+print(table(data$fuelType))
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+print(mean(data$price))
+print(sd(data$price))
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=tax, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Tax Box Plot Per Car Make")+
+  theme_minimal()
+print(sum(is.na (data$tax)))
+```
+
+# Notes 
+All tax missing values are in Mercedes Cclass annd Ford Focus for years 2019-2020
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=mileage, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MileageBox Plot Per Car Make")+
+  theme_minimal()
+print(mean(data$mileage))
+print(sd(data$mileage))
+```
+
+```{r}
+ks.test(data$tax, "pnorm") 
+ks.test(data$mpg, "pnorm") 
+```
+
+```{r}
+#cols <- c("mileage","tax", "mpg", "engineSize")
+#X <-data[cols]
+#library(mctest)
+#omcdiag(x=X,y= data$price)
+#write.csv(data_new,"/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/new_df.csv")
+```
+
+
+
+```{r}
+head(data)
+```
+
+```{r}
+#turn categorical values into numerics 
+data_clean_2 <- sapply(data_clean, unclass)
+df <- as.data.frame(data_clean_2)
+df$model <- as.factor(df$model)
+df$price <- as.factor(df$price)
+df$transmission <- as.factor(df$transmission)
+df$fuelType <- as.factor(df$fuelType)
+df$Car.Make <- as.factor(df$Car.Make)
+df$price <- as.numeric(df$price)
+head(df)
+```
+
+```{r}
+# create correlation plot of data 
+# subset categorical data and quantiative data to check for correlation between price
+library(ggcorrplot)
+#loadPkg(ggcorrplot)
+data_new_quant <- subset(df, select = c('year','price','mileage','tax','mpg','engineSize'))
+corr_quant <- round(cor(data_new_quant), 1)
+p.mat_quant <- cor_pmat(corr_quant, method = 'pearson')
+ggcorrplot(corr_quant, hc.order=TRUE,lab = TRUE, p.mat = p.mat_quant)+ labs(title = "Correlation Plot of Quantiative data")
+
+# scatterplot matrix
+#pairs()
+```
+
+
+```{r}
+# categorical data correlation plot 
+data_clean_cat <- subset(df, select = c('model','price','transmission','fuelType','Car.Make'))
+# make categorical data numeric
+data_new_cat <- sapply(data_clean_cat, unclass)
+corr_cat <- round(cor(data_new_cat), 1) 
+p.mat_cat <- cor_pmat(corr_cat, method = 'spearman') # use Spearman correlation for large dataset of categorical features
+ggcorrplot(corr_cat, hc.order=TRUE,p.mat=p.mat_cat, lab = TRUE) + labs(title = "Correlation Plot of Categorical data")
+
+# cor(data_new_cat$price, data_new_cat$model,
+#   method = "spearman"
+# )
+
+```
+
+
+```{r}
+ggplot(data=df, aes(price)) + 
+  geom_histogram( 
+                 col="blue", 
+                 fill="#00aaaa", 
+                 alpha = .7) + # opacity
+  labs(title="Histogram for Price") +
+  labs(x="Price (£)", y="Frequency") 
+
+qqnorm(data_clean$price, main="Q-Q plot of dataset") 
+qqline(data_clean$price)
+
+```
+
+```{r}
+# normalize Price 
+# library(MASS)
+# bc <- boxcox(data_clean$price ~ x)
+# (lambda <- bc$x[which.max(bc$y)])
+head(df)
+```
+
+
+```{r}
+
+# qjaw <- lm(bone ~ age + I(age ^ 2), data = jaws)
+# summary(qjaw)
+# plot(jaws)
+# grid <- seq(0, 60, 0.01)
+# lines(grid, predict(qjaw, data.frame(age = grid)), col = "red")
+
+#pick model from stepwise regression 
+library(tidyverse)
+library(caret)
+library(leaps)
+
+
+```
+
+
+```{r}
+model_full <- lm(price~model+ year+transmission+mileage+fuelType+tax+mpg+engineSize+Car.Make, data = df)
+summary(model_full)
+names(model_full)
+
+
+```
+
+```{r}
+#loadPkg(BAS)
+# Obtain residuals and n
+resid = residuals(bodyfat.lm)
+n = length(resid)
+
+# Calculate MSE
+MSE = 1/ (n - 2) * sum((resid ^ 2))
+MSE
+```
+
+```{r}
+#forward 
+loadPkg("leaps")
+visbest <- regsubsets(price~. , data = df, nbest = 2, method = "seqrep",really.big=T) 
+plot(visbest, scale = "adjr2", main = "Adjusted R^2")
+```
+```{r}
+qqnorm(models, main="Q-Q plot of O3 from Faraway::Ozone dataset") 
+qqline(models)
+```
+
+```{r}
+#backward 
+models <- regsubsets(price~., data = df, nvmax = 9,
+                     method = "backward")
+summary(models)
+```
+
+```{r}
+qjaw <- lm(price ~ year +  + I(age ^ 2), data = jaws)
+summary(qjaw)
+plot(jaws)
+grid <- seq(0, 60, 0.01)
+lines(grid, predict(qjaw, data.frame(age = grid)), col = "red")
+
+```
+
