@@ -15,12 +15,13 @@ str(data)
 ```
 
 ```{r}
+library(tidyr)
 print(table(data$year))
 data<- data[!(data$year== 2060),]
+data<- data[rowSums(is.na(data)) == 0,]
 print(table(data$model))
 ```
 # Notes
-Remove data prior to 2007? 2013?
 
 
 ```{r}
@@ -118,27 +119,24 @@ ggplot(data, aes(x=Car.Make, y=mpg, color=Car.Make)) +
 
 
 ```{r}
-mercedes_C<- data[(data$Car.Make == "Mercedes C Class"),]
-mercedes <-data[(data$Car.Make == "Mercedes")& (data$model == " C Class"),]
-str(mercedes)
+library(dplyr)
+data %>% 
+  group_by(Car.Make) %>%
+  summarise_at(vars(price), list(mean = mean))
 
-print(table(mercedes$year))
-print(mean(mercedes$price))
-print(sd(mercedes$price))
-boxplot(mercedes$price)
 
 
 ```
 ```{r}
-str(mercedes_C)
-print(table(mercedes_C$year))
-print(mean(mercedes_C$price))
-print(sd(mercedes_C$price))
-boxplot(mercedes_C$price)
+anovaRes = aov(price ~ Car.Make, data=data)
+names(anovaRes)
+summary(anovaRes)
+
+
 ```
 
 ```{r}
-ks.test(data$tax, "pnorm") 
-ks.test(data$mpg, "pnorm") 
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
 ```
 
