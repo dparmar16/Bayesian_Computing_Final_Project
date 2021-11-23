@@ -1,0 +1,249 @@
+---
+title: "EDA"
+author: "Group"
+date: "11/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  pkg <- ifelse(!character.only, as.character(substitute(pkg)) , pkg)  
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(substitute(pkg),dep=T); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyr)
+data <- read.csv("Data/uk_used_cars.csv")
+data<- data[!(data$year== 2060),]
+data<- data[rowSums(is.na(data)) == 0,]
+data
+
+```
+
+
+```{r}
+library(ggplot2)
+
+ggplot(data, aes(x=Car.Make))+
+  geom_bar(width=0.7, fill="steelblue")+
+scale_x_discrete(labels = abbreviate)+
+  labs(title = "Car Make Distribution plot")+
+  theme_minimal()
+
+```
+
+
+```{r}
+ggplot(data, aes(x=transmission))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Transmission Distribution plot")+
+  theme_minimal()
+
+```
+
+
+```{r}
+ggplot(data, aes(x=fuelType))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Fuel Type Distribution plot")+
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+
+
+```{r}
+ggplot(data=data, aes(price)) + 
+  geom_histogram( 
+                 col="blue", 
+                 fill="#00aaaa", 
+                 alpha = .7) + # opacity
+  labs(title="Histogram for Price") +
+  labs(x="Price (£)", y="Frequency") 
+
+qqnorm(data$price, main="Q-Q plot of dataset") 
+qqline(data$price)
+```
+
+
+
+
+
+```{r}
+anovaRes = aov(price ~ Car.Make, data=data)
+names(anovaRes)
+summary(anovaRes)
+```
+
+```{r}
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
+
+```
+
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=tax, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Tax Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=mileage, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MileageBox Plot Per Car Make")+
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(data, aes(x=Car.Make, y=mpg, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MPG Box Plot Per Car Make")+
+  theme_minimal()
+
+
+```
+
+```{r}
+library(dplyr)
+data %>% 
+  group_by(Car.Make) %>%
+  summarise_at(vars(price), list(mean = mean))
+
+```
+
+```{r}
+data <- sapply(data, unclass)
+df<- as.data.frame(data)
+df$model <- as.factor(df$model)
+df$price <- as.factor(df$price)
+df$transmission <- as.factor(df$transmission)
+df$fuelType <- as.factor(df$fuelType)
+df$Car.Make <- as.factor(df$Car.Make)
+df$price <- as.numeric(df$price)
+head(df)
+```
+
+```{r}
+# create correlation plot of data 
+# subset categorical data and quantiative data to check for correlation between price
+library(ggcorrplot)
+#loadPkg(ggcorrplot)
+data_new_quant <- subset(df, select = c('year','price','mileage','tax','mpg','engineSize'))
+corr_quant <- round(cor(data_new_quant), 1)
+p.mat_quant <- cor_pmat(corr_quant, method = 'pearson')
+ggcorrplot(corr_quant, hc.order=TRUE,lab = TRUE, p.mat = p.mat_quant)+ labs(title = "Correlation Plot of Quantiative data")
+
+# scatterplot matrix
+#pairs()
+
+```
+
+
+```{r}
+# categorical data correlation plot 
+data_clean_cat <- subset(df, select = c('model','price','transmission','fuelType','Car.Make'))
+# make categorical data numeric
+data_new_cat <- sapply(data_clean_cat, unclass)
+corr_cat <- round(cor(data_new_cat), 1) 
+p.mat_cat <- cor_pmat(corr_cat, method = 'spearman') # use Spearman correlation for large dataset of categorical features
+ggcorrplot(corr_cat, hc.order=TRUE,p.mat=p.mat_cat, lab = TRUE) + labs(title = "Correlation Plot of Categorical data")
+
+# cor(data_new_cat$price, data_new_cat$model,
+#   method = "spearman"
+# )
+
+```
+
+```{r}
+ggplot(data=data, aes(price)) + 
+  geom_histogram( 
+                 col="blue", 
+                 fill="#00aaaa", 
+                 alpha = .7) + # opacity
+  labs(title="Histogram for Price") +
+  labs(x="Price (£)", y="Frequency") 
+
+qqnorm(data$price, main="Q-Q plot of dataset") 
+qqline(data$price)
+
+```
+
+```{r}
+
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
