@@ -160,7 +160,7 @@ data %>%
 ```
 
 ```{r}
-data <- sapply(data, unclass)
+#data <- sapply(data, unclass)
 df<- as.data.frame(data)
 df$model <- as.factor(df$model)
 df$price <- as.factor(df$price)
@@ -202,37 +202,62 @@ ggcorrplot(corr_cat, hc.order=TRUE,p.mat=p.mat_cat, lab = TRUE) + labs(title = "
 
 ```
 
-```{r}
-ggplot(data=data, aes(price)) + 
-  geom_histogram( 
-                 col="blue", 
-                 fill="#00aaaa", 
-                 alpha = .7) + # opacity
-  labs(title="Histogram for Price") +
-  labs(x="Price (£)", y="Frequency") 
+# Logistic Regression
 
-qqnorm(data$price, main="Q-Q plot of dataset") 
-qqline(data$price)
+```{r}
+ quantile(data$price)
+```
+
+```{r}
+# Add new Price_Range variable (Dependent Variable for Logistice Regression)
+data<- data %>% mutate(Price_Range =
+                     case_when(price <= 9999 ~  "Low", 
+                               price > 9999 & price <= 14495 ~ "Medium",
+                               price > 14495 & price <= 20870 ~ "High",
+                               price > 20870  ~ "Luxury")
+)
 
 ```
 
 ```{r}
-
-
-
+# drop model and price
+drops <- c("model","price")
+data<- data[ , !(names(data) %in% drops)]
+data
 ```
 
 ```{r}
+# One-hot encoding
+library(mltools)
+library(data.table)
+data$year <- as.factor(data$year)
 
-
+data_df <- one_hot(as.data.table(data))
+data_df
 ```
 
 ```{r}
+require(rjags)
+require(runjags)
+price_model <- "model{
+  for(i in 1:99186){
+    y[i] ~ dbern(p[i])
+    logit(p[i]) <- b0 + b1 * x[i]
+  }
+  b0 ~ dnorm(0, 10 ^ (-2))
+  b1 ~ dnorm(0, 10 ^ (-2))
+}"
+price_jags <- jags.model(textConnection(price_model), data = list(y = data_df$Price_Range, x = data_df$tax))
+update(price_jags, 10000)
+price_sim <- coda.samples(price_jags, c("b0", "b1"), 100000)
 
-```
+plot(price_sim)
+summary(price_sim)
+pricemcmc <- data.frame(price_sim[[1]])
+head(pricemcmc, 3)
 
-```{r}
-
+m3 <- 1 / (1 + exp(-(pricemcmc$b0 + 3 * pricemcmc$b1)))
+plot(density(m3))
 ```
 
 
