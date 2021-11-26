@@ -239,25 +239,72 @@ data_df
 ```{r}
 require(rjags)
 require(runjags)
+y1 <- as.numeric(data$Price_Range=='Low')
+y2 <- as.numeric(data$Price_Range=='Medium')
+y3 <- as.numeric(data$Price_Range=='High')
+y4 <- as.numeric(data$Price_Range=='Luxury')
 price_model <- "model{
-  for(i in 1:99186){
-    y[i] ~ dbern(p[i])
-    logit(p[i]) <- b0 + b1 * x[i]
+  for(i in 1:N){
+    y1[i] ~ dbern(p1[i])
+    y2[i] ~ dbern(p2[i])
+    y3[i] ~ dbern(p3[i])
+    y4[i] ~ dbern(p4[i])
+    
+    logit(p1[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+  
+    logit(p2[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+  
+    logit(p3[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+  
+    logit(p4[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
   }
   b0 ~ dnorm(0, 10 ^ (-2))
   b1 ~ dnorm(0, 10 ^ (-2))
+  b2 ~ dnorm(0, 10 ^ (-2))
+  b3 ~ dnorm(0, 10 ^ (-2))
+  b4 ~ dnorm(0, 10 ^ (-2))
+  b5 ~ dnorm(0, 10 ^ (-2))
+  b6 ~ dnorm(0, 10 ^ (-2))
+  b7 ~ dnorm(0, 10 ^ (-2))
+  b8 ~ dnorm(0, 10 ^ (-2))
+  b9 ~ dnorm(0, 10 ^ (-2))
+  b10 ~ dnorm(0, 10 ^ (-2))
+  b11 ~ dnorm(0, 10 ^ (-2))
+  b12 ~ dnorm(0, 10 ^ (-2))
+  b13 ~ dnorm(0, 10 ^ (-2))
 }"
-price_jags <- jags.model(textConnection(price_model), data = list(y = data_df$Price_Range, x = data_df$tax))
-update(price_jags, 10000)
-price_sim <- coda.samples(price_jags, c("b0", "b1"), 100000)
+price_jags <- jags.model(textConnection(price_model), data = list(y1 =y1, y2=y2, y3=y3, y4=y4, TA=data_df$transmission_Automatic,
+                                                                  TM= data_df$transmission_Manual, TO= data_df$transmission_Other,
+                                                                  TS=data_df$`transmission_Semi-Auto`, Mileage=data_df$mileage, FD= data_df$fuelType_Diesel, FE=data_df$fuelType_Electric, FH= data_df$fuelType_Hybrid, FP= data_df$fuelType_Petrol, tax= data_df$tax, mpg= data_df$mpg, engineSize= data_df$engineSize, N=length(data), n.chains=3,
+                   n.adapt=3000))
 
+
+update(price_jags,  n.iter=1000,progress.bar = 'none')
+price_sim <- coda.samples(price_jags, c("b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13"), n.iter=1000,
+                        progress.bar = 'none')
+
+
+
+#Results
+Res <- do.call(rbind.data.frame, price_sim)
+
+#summary(price_sim)
+#pricemcmc <- data.frame(price_sim[[1]])
+#head(pricemcmc, 3)
+
+#m3 <- 1 / (1 + exp(-(pricemcmc$b0 + 3 * pricemcmc$b1)))
+#plot(density(m3))
+```
+
+```{r}
 plot(price_sim)
-summary(price_sim)
-pricemcmc <- data.frame(price_sim[[1]])
-head(pricemcmc, 3)
+```
 
-m3 <- 1 / (1 + exp(-(pricemcmc$b0 + 3 * pricemcmc$b1)))
-plot(density(m3))
+
+
+```{r}
+Res
+
 ```
 
 
