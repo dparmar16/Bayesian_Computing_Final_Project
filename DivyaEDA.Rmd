@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 data <- read.csv("Data/uk_used_cars.csv")
+data<- data[!(data$year== 2060),]
+data<- data[rowSums(is.na(data)) == 0,]
 str(data)
 ```
 
@@ -41,6 +43,9 @@ Build hierarchical model on Maker and Model.
 ## Look at mean of price by car maker and model. Code taken from Aziz's work. 
 
 ```{r}
+
+library(ggplot2)
+
 ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
   geom_boxplot()+
   scale_x_discrete(labels = abbreviate)+
@@ -96,3 +101,95 @@ for (car in car_makers_unique) {
 
 
 ## Next steps - identify priors for hierarchical model.
+
+``` {r}
+
+print(nrow(data))
+print(length(unique(data$model)))
+print(length(unique(data$Car.Make)))
+
+```
+
+
+
+``` {r}
+
+# Need rjags to build model
+# One helpful link:
+# https://stats.stackexchange.com/questions/185254/multi-level-bayesian-hierarchical-regression-using-rjags
+
+N <- nrow(data)
+
+carmaker <- as.factor(data$Car.Make)
+carmodel <- as.factor(data$model)
+
+Ncarmaker <- nlevels(as.factor(data$Car.Make))
+Ncarmodel <- nlevels(as.factor(data$model))
+
+y <- data$price
+
+x1 <- data$mileage
+x2 <- data$mpg
+
+```
+
+
+``` {r}
+
+modelstring = "
+  model {
+    for (i in 1:N) {
+      y[i] ~ dnorm(yhat[i], tau)
+      yhat ~ b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
+    }
+    
+    for (m in 1:Ncarmodel) {
+      b0[m] ~ dnorm(c0[c[m]], b0t) 
+      b1[m] ~ dnorm(c1[c[m]], b1t) 
+      b2[m] ~ dnorm(c2[c[m]], b2t) 
+    }
+    
+    for (c in 1:Ncarmaker) {
+      c0[c] ~ dnorm(d0, c0t)
+      c1[c] ~ dnorm(d1, c1t)
+      c2[c] ~ dnorm(d2, c2t)
+    }
+  
+  b0t ~ dgamma(0.001, 0.001)
+  b1t ~ dgamma(0.001, 0.001)
+  b2t ~ dgamma(0.001, 0.001)
+  
+  c0t ~ dgamma(0.001, 0.001)
+  c1t ~ dgamma(0.001, 0.001)
+  c2t ~ dgamma(0.001, 0.001)
+  
+  d0 ~ dnorm(0, 0.0001)
+  d1 ~ dnorm(0, 0.0001)
+  d2 ~ dnorm(0, 0.0001)
+  
+  tau ~ dgamma(0.001, 0.001)
+  
+  }
+"
+
+writeLines(modelstring, con="model_hier_dp.txt")
+
+```
+
+```{r}
+
+library(rjags)
+
+jags <- jags.model('model_hier_dp.txt',
+                   data = list('x1' = x1,
+                               'x2' = x2,
+                               'y' = y,
+                               'N' = N,
+                               's' = s,
+                               'Ncarmodel' = Ncarmodel,
+                               'Ncarmaker' = Mcarmaker),
+                   n.chains = 4,
+                   n.adapt = 100)
+
+
+```
