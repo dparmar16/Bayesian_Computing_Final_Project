@@ -2,7 +2,7 @@
   model {
     for (i in 1:N) {
       y[i] ~ dnorm(yhat[i], tau)
-      yhat ~ b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
+      yhat <- b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
     }
     
     for (m in 1:Ncarmodel) {

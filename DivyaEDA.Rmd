@@ -140,7 +140,7 @@ modelstring = "
   model {
     for (i in 1:N) {
       y[i] ~ dnorm(yhat[i], tau)
-      yhat ~ b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
+      yhat <- b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
     }
     
     for (m in 1:Ncarmodel) {
@@ -185,9 +185,8 @@ jags <- jags.model('model_hier_dp.txt',
                                'x2' = x2,
                                'y' = y,
                                'N' = N,
-                               's' = s,
                                'Ncarmodel' = Ncarmodel,
-                               'Ncarmaker' = Mcarmaker),
+                               'Ncarmaker' = Ncarmaker),
                    n.chains = 4,
                    n.adapt = 100)
 
