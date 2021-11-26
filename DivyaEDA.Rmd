@@ -85,6 +85,7 @@ hist(df_ex$mean, breaks=20)
 
 ```{r}
 
+library(dplyr)
 car_makers_unique = unique(data$Car.Make)
 
 for (car in car_makers_unique) {
@@ -120,14 +121,21 @@ print(length(unique(data$Car.Make)))
 
 N <- nrow(data)
 
+# Factor variables for hierarchical priors
 carmaker <- as.factor(data$Car.Make)
 carmodel <- as.factor(data$model)
 
+# Variables for model definition
 Ncarmaker <- nlevels(as.factor(data$Car.Make))
 Ncarmodel <- nlevels(as.factor(data$model))
 
-y <- data$price
+# Lookup table of carmaker to car model - groupby carmaker and carmodel to get 195 obs
+maker_model <- data.frame(carmaker, carmodel)
+maker_model <- unique(maker_model)
+maker_model <- maker_model$carmaker
 
+# Covariates
+y <- data$price
 x1 <- data$mileage
 x2 <- data$mpg
 
@@ -139,14 +147,16 @@ x2 <- data$mpg
 modelstring = "
   model {
     for (i in 1:N) {
-      y[i] ~ dnorm(yhat[i], tau)
-      yhat <- b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
+      #y[i] ~ dnorm(yhat[i], tau)
+      #yhat <- b0[carmodel[i]] + b1[carmodel[i]] * x1[i] + b2[carmodel[i]] * x2[i]
+      
+      y[i] ~ dnorm(b0[carmodel[i]] + b1[carmodel[i]] * x1[i] + b2[carmodel[i]] * x2[i], tau)
     }
     
     for (m in 1:Ncarmodel) {
-      b0[m] ~ dnorm(c0[c[m]], b0t) 
-      b1[m] ~ dnorm(c1[c[m]], b1t) 
-      b2[m] ~ dnorm(c2[c[m]], b2t) 
+      b0[m] ~ dnorm(c0[makermodel[m]], b0t) 
+      b1[m] ~ dnorm(c1[makermodel[m]], b1t) 
+      b2[m] ~ dnorm(c2[makermodel[m]], b2t) 
     }
     
     for (c in 1:Ncarmaker) {
@@ -180,15 +190,25 @@ writeLines(modelstring, con="model_hier_dp.txt")
 
 library(rjags)
 
-jags <- jags.model('model_hier_dp.txt',
+jagsModel <- jags.model('model_hier_dp.txt',
                    data = list('x1' = x1,
                                'x2' = x2,
                                'y' = y,
                                'N' = N,
                                'Ncarmodel' = Ncarmodel,
-                               'Ncarmaker' = Ncarmaker),
+                               'Ncarmaker' = Ncarmaker,
+                               #'carmaker' = carmaker,
+                               'carmodel' = carmodel,
+                               'makermodel' = maker_model),
                    n.chains = 4,
                    n.adapt = 100)
 
+
+```
+
+```{r}
+
+#results <- run.jags('model_hier_dp.txt',)
+update(jagsModel, n.iter=100)
 
 ```

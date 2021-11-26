@@ -1,14 +1,16 @@
 
   model {
     for (i in 1:N) {
-      y[i] ~ dnorm(yhat[i], tau)
-      yhat <- b0[s[i]] + b1[s[i]] * x1[i] + b2[s[i]] * x2[i]
+      #y[i] ~ dnorm(yhat[i], tau)
+      #yhat <- b0[carmodel[i]] + b1[carmodel[i]] * x1[i] + b2[carmodel[i]] * x2[i]
+      
+      y[i] ~ dnorm(b0[carmodel[i]] + b1[carmodel[i]] * x1[i] + b2[carmodel[i]] * x2[i], tau)
     }
     
     for (m in 1:Ncarmodel) {
-      b0[m] ~ dnorm(c0[c[m]], b0t) 
-      b1[m] ~ dnorm(c1[c[m]], b1t) 
-      b2[m] ~ dnorm(c2[c[m]], b2t) 
+      b0[m] ~ dnorm(c0[makermodel[m]], b0t) 
+      b1[m] ~ dnorm(c1[makermodel[m]], b1t) 
+      b2[m] ~ dnorm(c2[makermodel[m]], b2t) 
     }
     
     for (c in 1:Ncarmaker) {
