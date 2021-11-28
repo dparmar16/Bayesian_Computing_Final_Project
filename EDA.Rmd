@@ -49,6 +49,10 @@ library(tidyr)
 data <- read.csv("Data/uk_used_cars.csv")
 data<- data[!(data$year== 2060),]
 data<- data[rowSums(is.na(data)) == 0,]
+data<-data[!(data$year < 2008),]
+data <- data[!(data$fuelType == "Electric" | data$fuelType == "Other"),]
+data <- data[! (data$transmission == "Other"),]
+
 data
 
 ```
@@ -232,16 +236,21 @@ library(mltools)
 library(data.table)
 data$year <- as.factor(data$year)
 
-data_df <- one_hot(as.data.table(data))
+data_df <- as.data.frame(one_hot(as.data.table(data)))
+drops <- c("transmission_Other","fuelType_Other", "fuelType_Electric", "Car.Make_Ford Focus", "Car.Make_Mercedes C Class")
+data_df = data_df[ , !(names(data_df) %in% drops)]
 data_df
+#data_df = subset(data_df, select = -c(transmission_Other,fuelType_Other, fuelType_Electric, Car.Make_Ford Focus, Car.Make_Mercedes C Class) )
+#data_df
 ```
+
 
 ```{r}
 require(rjags)
 require(runjags)
 y1 <- as.numeric(data$Price_Range=='Low')
 y2 <- as.numeric(data$Price_Range=='Medium')
-y3 <- as.numeric(data$Price_Range=='High')
+y3 <- as.numeric(data$Price_Range=='High')           
 y4 <- as.numeric(data$Price_Range=='Luxury')
 price_model <- "model{
   for(i in 1:N){
@@ -250,13 +259,24 @@ price_model <- "model{
     y3[i] ~ dbern(p3[i])
     y4[i] ~ dbern(p4[i])
     
-    logit(p1[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+    logit(p1[i]) <- b0 + b1 * TA[i] +b2 * TM[i] +b3*TS[i]+ b4* Mileage[i] + b5*FD[i]  + b6 * FH[i] + b7 +FP[i] + b8 * tax[i] + b9* mpg[i] + b10 * engineSize[i] + b11*Y2008[i] +  b12*Y2009[i] + b13*Y2010[i] + b14*Y2011[i] + b15*Y2012[i] + b16*Y2013[i] + b17*Y2014[i] + b18*Y2015[i] + b19*Y2016[i]
+    + b20*Y2017[i] + b21*Y2018[i] + b22*Y2019[i] + b23*Y2020[i] +  b24 * Audi[i] + b25 * BMW[i] + b26* Ford[i] + b27 * Hyundai[i] + b28 * Mercedes[i] + b29* Skoda[i] + b30* Toyota[i]+ b31 * Vauxhall[i] + b32 * Volkswagen[i] 
+    
   
-    logit(p2[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+    logit(p2[i]) <- b0 + b1 * TA[i] +b2 * TM[i] +b3*TS[i]+ b4* Mileage[i] + b5*FD[i]  + b6 * FH[i] + b7 +FP[i] + b8 * tax[i] + b9* mpg[i] + b10 * engineSize[i] + b11*Y2008[i] +  b12*Y2009[i] + b13*Y2010[i] + b14*Y2011[i] + b15*Y2012[i] + b16*Y2013[i] + b17*Y2014[i] + b18*Y2015[i] + b19*Y2016[i]
+    + b20*Y2017[i] + b21*Y2018[i] + b22*Y2019[i] + b23*Y2020[i] + b24 * Audi[i] + b25 * BMW[i] + b26* Ford[i] + b27 * Hyundai[i] + b28 * Mercedes[i] + b29* Skoda[i] + b30* Toyota[i]+ b31 * Vauxhall[i] + b32 * Volkswagen[i] 
+    
   
-    logit(p3[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+   
+  logit(p3[i]) <- b0 + b1 * TA[i] +b2 * TM[i] +b3*TS[i]+ b4* Mileage[i] + b5*FD[i]  + b6 * FH[i] + b7 +FP[i] + b8 * tax[i] + b9* mpg[i] + b10 * engineSize[i] + b11*Y2008[i] +  b12*Y2009[i] + b13*Y2010[i] + b14*Y2011[i] + b15*Y2012[i] + b16*Y2013[i] + b17*Y2014[i] + b18*Y2015[i] + b19*Y2016[i]
+    + b20*Y2017[i] + b21*Y2018[i] + b22*Y2019[i] + b23*Y2020[i] +  b24 * Audi[i] + b25 * BMW[i] + b26* Ford[i] + b27 * Hyundai[i] + b28 * Mercedes[i] + b29* Skoda[i] + b30* Toyota[i]+ b31 * Vauxhall[i] + b32 * Volkswagen[i] 
   
-    logit(p4[i]) <- b0 + b1 * TA[i] +b2 * TM[i]+ b3 * TO[i] +b5*TS[i]+ b6* Mileage[i] + b7*FD[i] + b8 * FE[i] + b9 * FH[i] + b10 +FP[i] + b11 * tax[i] + b12* mpg[i] + b13 * engineSize[i]
+  
+    
+  logit(p4[i]) <- b0 + b1 * TA[i] +b2 * TM[i] +b3*TS[i]+ b4* Mileage[i] + b5*FD[i]  + b6 * FH[i] + b7 +FP[i] + b8 * tax[i] + b9* mpg[i] + b10 * engineSize[i] + b11*Y2008[i] +  b12*Y2009[i] + b13*Y2010[i] + b14*Y2011[i] + b15*Y2012[i] + b16*Y2013[i] + b17*Y2014[i] + b18*Y2015[i] + b19*Y2016[i]
+    + b20*Y2017[i] + b21*Y2018[i] + b22*Y2019[i] + b23*Y2020[i] +  b24 * Audi[i] + b25 * BMW[i] + b26* Ford[i] + b27 * Hyundai[i] + b28 * Mercedes[i] + b29* Skoda[i] + b30* Toyota[i]+ b31 * Vauxhall[i] + b32 * Volkswagen[i] 
+  
+  
   }
   b0 ~ dnorm(0, 10 ^ (-2))
   b1 ~ dnorm(0, 10 ^ (-2))
@@ -272,15 +292,63 @@ price_model <- "model{
   b11 ~ dnorm(0, 10 ^ (-2))
   b12 ~ dnorm(0, 10 ^ (-2))
   b13 ~ dnorm(0, 10 ^ (-2))
+  b14 ~ dnorm(0, 10 ^ (-2))
+  b15 ~ dnorm(0, 10 ^ (-2))
+  b16 ~ dnorm(0, 10 ^ (-2))
+  b17~ dnorm(0, 10 ^ (-2))
+  b18 ~ dnorm(0, 10 ^ (-2))
+  b19 ~ dnorm(0, 10 ^ (-2))
+  b20~ dnorm(0, 10 ^ (-2))
+  b21~ dnorm(0, 10 ^ (-2))
+  b22~ dnorm(0, 10 ^ (-2))
+  b23~ dnorm(0, 10 ^ (-2))
+  b24 ~ dnorm(0, 10 ^ (-2))
+  b25 ~ dnorm(0, 10 ^ (-2))
+  b26 ~ dnorm(0, 10 ^ (-2))
+  b27 ~ dnorm(0, 10 ^ (-2))
+  b28 ~ dnorm(0, 10 ^ (-2))
+  b29 ~ dnorm(0, 10 ^ (-2))
+  b30 ~ dnorm(0, 10 ^ (-2))
+  b31 ~ dnorm(0, 10 ^ (-2))
+  b32 ~ dnorm(0, 10 ^ (-2))
 }"
-price_jags <- jags.model(textConnection(price_model), data = list(y1 =y1, y2=y2, y3=y3, y4=y4, TA=data_df$transmission_Automatic,
-                                                                  TM= data_df$transmission_Manual, TO= data_df$transmission_Other,
-                                                                  TS=data_df$`transmission_Semi-Auto`, Mileage=data_df$mileage, FD= data_df$fuelType_Diesel, FE=data_df$fuelType_Electric, FH= data_df$fuelType_Hybrid, FP= data_df$fuelType_Petrol, tax= data_df$tax, mpg= data_df$mpg, engineSize= data_df$engineSize, N=length(data), n.chains=3,
+price_jags <- jags.model(textConnection(price_model), data = list(y1 =y1, y2=y2, y3=y3, y4=y4, 
+                                                                  Y2008=data_df$year_2008,
+                                                                  Y2009=data_df$year_2009,
+                                                                  Y2010=data_df$year_2010,
+                                                                  Y2011=data_df$year_2011,
+                                                                  Y2012=data_df$year_2012,
+                                                                  Y2013=data_df$year_2013,
+                                                                  Y2014=data_df$year_2014,
+                                                                  Y2015=data_df$year_2015,
+                                                                  Y2016=data_df$year_2016,
+                                                                  Y2017=data_df$year_2017,
+                                                                  Y2018=data_df$year_2018,
+                                                                  Y2019=data_df$year_2019,
+                                                                  Y2020=data_df$year_2020,
+                                                                  Audi= data_df$Car.Make_Audi,
+                                                                  BMW= data_df$Car.Make_BMW,
+                                                                  Ford= data_df$Car.Make_Ford,
+                                                                  Hyundai= data_df$Car.Make_Hyundai,
+                                                                  Mercedes= data_df$Car.Make_Mercedes,
+                                                                  Skoda= data_df$Car.Make_Skoda,
+                                                                  Toyota= data_df$Car.Make_Toyota,
+                                                                  Vauxhall= data_df$Car.Make_Vauxhall,
+                                                                  Volkswagen= data_df$Car.Make_Volkswagen,
+                                                                  TA=data_df$transmission_Automatic,
+                                                                  TM= data_df$transmission_Manual,
+                                                                  TS=data_df$`transmission_Semi-Auto`,
+                                                                  Mileage=data_df$mileage, FD= data_df$fuelType_Diesel
+                                                                  , FH= data_df$fuelType_Hybrid, 
+                                                                  FP= data_df$fuelType_Petrol, 
+                                                                  tax= data_df$tax, mpg= data_df$mpg, 
+                                                                  engineSize= data_df$engineSize,
+                                                                  N=length(data), n.chains=3,
                    n.adapt=3000))
 
 
 update(price_jags,  n.iter=1000,progress.bar = 'none')
-price_sim <- coda.samples(price_jags, c("b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13"), n.iter=1000,
+price_sim <- coda.samples(price_jags, c("b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13","b14", "b15", "b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31", "b32"), n.iter=1000,
                         progress.bar = 'none')
 
 
@@ -307,15 +375,75 @@ Res
 
 ```
 
+```{r}
+print(list("bo", mean(Res$b0), sd(Res$b0)))
+print(list("b1", mean(Res$b1), sd(Res$b1)))
+print(list("b2", mean(Res$b2), sd(Res$b2)))
+print(list("b3", mean(Res$b3), sd(Res$b3)))
+print(list("b4", mean(Res$b4), sd(Res$b4)))
+print(list("b5", mean(Res$b5), sd(Res$b5)))
+print(list("b6", mean(Res$b6), sd(Res$b6)))
+print(list("b7", mean(Res$b7), sd(Res$b7)))
+print(list("b8", mean(Res$b8), sd(Res$b8)))
+print(list("b9", mean(Res$b9), sd(Res$b9)))
+print(list("b10", mean(Res$b10), sd(Res$b10)))
+print(list("b11", mean(Res$b11), sd(Res$b11)))
+print(list("b12", mean(Res$b12), sd(Res$b12)))
+print(list("b13", mean(Res$b13), sd(Res$b13)))
+print(list("b14", mean(Res$b14), sd(Res$b14)))
+print(list("b15", mean(Res$b15), sd(Res$b15)))
+print(list("b16", mean(Res$b16), sd(Res$b16)))
+print(list("b17", mean(Res$b17), sd(Res$b17)))
+print(list("b18", mean(Res$b18), sd(Res$b18)))
+print(list("b19", mean(Res$b19), sd(Res$b19)))
+print(list("b20", mean(Res$b20), sd(Res$b20)))
+print(list("b21", mean(Res$b21), sd(Res$b21)))
+print(list("b22", mean(Res$b22), sd(Res$b22)))
+print(list("b23", mean(Res$b23), sd(Res$b23)))
+print(list("b24", mean(Res$b24), sd(Res$b24)))
+print(list("b25", mean(Res$b25), sd(Res$b25)))
+print(list("b26", mean(Res$b26), sd(Res$b26)))
+print(list("b27", mean(Res$b27), sd(Res$b27)))
+print(list("b28", mean(Res$b28), sd(Res$b28)))
+print(list("b29", mean(Res$b29), sd(Res$b29)))
+print(list("b30", mean(Res$b30), sd(Res$b30)))
+print(list("b31", mean(Res$b31), sd(Res$b31)))
+print(list("b32", mean(Res$b32), sd(Res$b32)))
+
+
+
+
+```
 
 
 
 
 
 
+```{r}
+summary(price_sim)
+```
+
+```{r}
+pricemcmc <- data.frame(price_sim[[1]])
+pricemcmc
+```
 
 
 
+
+
+```{r}
+
+m3 <- 1 / (1 + exp(-(pricemcmc$b0 + 0 * pricemcmc$b1)))
+plot(density(m3))
+```
+
+
+
+```{r}
+m3
+```
 
 
 
