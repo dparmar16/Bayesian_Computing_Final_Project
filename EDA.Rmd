@@ -220,14 +220,14 @@ data<- data %>% mutate(Price_Range =
                                price > 14495 & price <= 20870 ~ "High",
                                price > 20870  ~ "Luxury")
 )
-
 ```
 
 ```{r}
 # drop model and price
-drops <- c("model","price")
+drops <- c("model")
+#drops <- c("model","price")
 data<- data[ , !(names(data) %in% drops)]
-data
+head(data)
 ```
 
 ```{r}
@@ -239,9 +239,9 @@ data$year <- as.factor(data$year)
 data_df <- as.data.frame(one_hot(as.data.table(data)))
 drops <- c("transmission_Other","fuelType_Other", "fuelType_Electric", "Car.Make_Ford Focus", "Car.Make_Mercedes C Class")
 data_df = data_df[ , !(names(data_df) %in% drops)]
-data_df
+#write.csv(data_df,"/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/Clean_data.csv")
 #data_df = subset(data_df, select = -c(transmission_Other,fuelType_Other, fuelType_Electric, Car.Make_Ford Focus, Car.Make_Mercedes C Class) )
-#data_df
+head(data_df)
 ```
 
 
