@@ -1,0 +1,389 @@
+---
+title: "EDA_Final"
+author: "Group"
+date: "11/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  pkg <- ifelse(!character.only, as.character(substitute(pkg)) , pkg)  
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(substitute(pkg),dep=T); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyr)
+library(ggplot2)
+#Clenaing the data
+data <- read.csv("Data/uk_used_cars.csv") # read the data in 
+print('There are 108540 rows before cleaning')
+nrow(data) # 108540 before cleaning
+data<- data[!(data$year== 2060),] # removed car sales from 2060
+data<- data[rowSums(is.na(data)) == 0,] # removed NA values
+
+                                                          ###########################################
+                                                          ### below are additional cleaning steps ###
+                                                          ###########################################
+
+
+print('Year Count on Raw Data')
+table(data$year) # create table to show count of years that should be deleted
+table_year <- as.data.frame(table(data$year))
+#pie(table(data$year), main = 'Raw Data Counts on Car Years') # created visualization for car year counts
+ggplot(table_year, aes(x = "", y = Freq, fill = Var1)) +
+  ggtitle('Raw Data Counts on Car Years') +
+  geom_col() +
+  coord_polar(theta = "y")
+data<-data[!(data$year < 2008),] # removed years less than 
+
+
+print('Fuel Type count on Raw Data')
+table(data$fuelType) # created table for fuel types variable
+table_fuelType <- as.data.frame(table(data$fuelType))
+#pie(table(data$fuelType), main = 'Raw Data Counts on Fuel Types') # created visualization for fuel types
+ggplot(table_fuelType, aes(x = "", y = Freq, fill = Var1)) +
+  ggtitle('Raw Data Counts on Fuel Types') +
+  geom_col() +
+  coord_polar(theta = "y")
+data <- data[!(data$fuelType == "Electric" | data$fuelType == "Other"),] # remove electric and other from fuel types
+
+
+print('Transmission types count on Raw Data')
+table(data$transmission)
+table_transmission <- as.data.frame(table(data$transmission))
+#pie(table(data$transmission), main= 'Raw Data Counts on Transmission types')
+ggplot(table_transmission, aes(x = "", y = Freq, fill = Var1)) +
+  ggtitle('Raw Data Counts on Transmission Types') +
+  geom_col() +
+  coord_polar(theta = "y")
+data <- data[!(data$transmission == "Other"),]
+
+# review of clean data
+print('Number of rows after cleaning')
+nrow(data) # now there are 98439 rows after cleaning 
+x <- (1-(98439/108540))*100 # original data loss from cleaning calculation
+print('Total percentage of rows removed from the original data is')
+x # 9.31% of the original data was removed 
+head(data)
+```
+
+For this project, the dataset of [100,000 used car sales in the United Kingdom] (https://www.kaggle.com/adityadesai13/used-car-dataset-ford-and-mercedes?select=bmw.csv) was analyzed. Originally there were 9 total variables with 108540 rows. The variable of 'model' was dropped from the analysis as there were too many classes to build a model around it. The multiple csv from Kaggle were compiled and identified with a new variable 'Car.Make'. The dependent variable was 'price'. The four categorical independent variables were 'year', 'transmission', 'fuelType', and 'Car.Make'. the four quantitative independent variables were 'mileage', 'tax', 'mpg' and 'engineSize'. One-hot encoding was applied to the categorical data and the final dataframe had a total of 32 columns. Outliers were kept in the analysis as the researched wanted to avoid class imbalance for the Car.Make categories. 
+
+The following steps were taken as part of data cleaning. All NA values were removed. Next no years were included from before 2008 and after 2020. 'Electric' and 'Other' were removed from the fuel type variable. 'Other' was removed from the transmission type. These classes were removed as they had no or very few data points of interest. The final dataframe removed 9.31% of the original data. The final dataframe had 98439 rows. The alpha of 0.05 was utlized for all subsequent statistical analysis. 
+
+
+```{r}
+# get summary stats for price
+summary(data$price)
+print('the standard deviation of price is')
+sd(data$price)
+options(digits=10)
+print('the variance of price is')
+var(data$price)
+```
+The summary Statistics indicate a right skew in the data as the median is less than the mean. Normality should be assessed on the price variable and a proper transformation should be applied. 
+
+```{r}
+set.seed(42)
+#non normal data
+ggplot(data=data, aes(price)) + 
+  geom_histogram( 
+                 col="blue", 
+                 fill="#00aaaa", 
+                 alpha = .7) + # opacity
+  labs(title="Histogram for Price") +
+  labs(x="Price (£)", y="Frequency") 
+
+qqnorm(data$price, main="Q-Q plot of dataset") 
+qqline(data$price)
+ks.test(data$price, "pnorm") # Kolmogorov-Smirnov normality test # p-value very low so data is confirmed to not be normally distributed
+
+#box-cox transformation
+library(forecast)
+lambda = BoxCox.lambda(data$price) # the data recieved a lambda of -0.128 so a new variable was created 
+data$clean_price = BoxCox(data$price,lambda) # apply the proper transformation to normalize the price data
+
+#normal data
+ggplot(data=data, aes(clean_price)) + 
+  geom_histogram( 
+                 col="blue", 
+                 fill="#00aaaa", 
+                 alpha = .7) + # opacity
+  labs(title="Histogram for Ttransformed Price")+
+  labs(x="Price (£)", y="Frequency") 
+qqnorm(data$clean_price, main="Q-Q plot of Transformed dataset") 
+qqline(data$clean_price)
+ks.test(data$clean_price, "pnorm") # Kolmogorov-Smirnov  test on normality for large sample data
+```
+
+The price data appeared very skewed to the right from the histogram. The Q-Q plot confirmed this assement as by the 2nd and 4th theoretical quantile, the data appeared to drastically increase which indicated not normally distributed data. The box-cox procedure was implemented on the data. The procedure identified a lambda of -.128. The transformation was applied to the pricing data. The histogram for the transformed data appeared normally distributed. The Q-Q plot for the transformed data appeared to have tails moving away from the data at around the -4th to -2 theoretical quantile and the 4th theoretical quantile. The Kolmogorov-Smirnov was applied to the raw data and it yielded a very low p-value of <2e-16. With this information the researchers concluded that the data was not normally distributed. The Kolmogorov-Smirnov was further applied to the transformed data and it too yielded a low p-value of <2e-16. Since the transformed data was found to mathematically normalize the data, the original raw data was used for further analysis. 
+
+# ############## #
+# Graphs for EDA #
+# ############## #
+
+```{r}
+library(ggplot2)
+dat <-as.data.frame(table(data$Car.Make)) # two zero found in table and turned it into a dataframe
+dat[dat==0] <- NA # turned the zeros to NA values
+data2<-dat[complete.cases(dat),] # removed the NA values
+data2 <- data2[(order(-data2$Freq)),] # ordered the dataframe in descending order 
+data2 #printed dataframe to check
+
+
+
+# still not sure why this is happening
+#ggplot(data, aes(x = Car.Make))
+#barplot(data2$Freq, names.arg = data2$Var1,xlab="Types of Cars", ylab="Count of Cars", main ='Types of Cars Count')
+
+
+
+
+ggplot(data, aes(x=data$Car.Make))+
+  geom_bar(width=0.7, fill="steelblue")+
+scale_x_discrete(labels = abbreviate)+
+  labs(title = "Car Make Distribution Plot")+
+  theme_minimal()
+
+```
+The most popular car markers were Ford. Vlks, and Vxhl. The least popular Car Makers were Hynd, Skod, and Toyota. The dataset appeared to have a majority of European based models.  
+
+```{r}
+ggplot(data, aes(x=transmission))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Transmission Distribution Plot")+
+  theme_minimal()
+```
+A graph for the count of transmission types was constructed as well. Manual appeared to be the most common. This was then followed by Semi-Auto adn the Automatic. 
+
+```{r}
+ggplot(data, aes(x=fuelType))+
+  geom_bar(width=0.7, fill="steelblue")+
+  labs(title = "Car Fuel Type Distribution Plot")+
+  theme_minimal()
+
+```
+As Hybrid cars have only recently been introduced into the market, it made sense to use it in the lowest of fuelTypes for this dataset. Petrol and Diesel based cars have a clear majority in the used car market. 
+```{r}
+
+ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+It appeared that Mercedes had the highest price values for their vehicles followed by Audi and then BMW. the prices for carmakes tended to range around the 25000 pound range. Each box appeared skewed to the right as there were noticeable outliers within each group. Further testing was employed to see if there was any statistical difference between the Car Makes.
+
+```{r}
+anovaRes = aov(price ~ Car.Make, data=data)
+names(anovaRes)
+summary(anovaRes)
+```
+An ANOVA test for price of different Car Makes had a p-value of <2e-16 which revealed that there was a statistical difference between the groups. Pairwise comparison was introduced to see which groups were different from each other.
+
+```{r}
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
+```
+The Tukey pairwise comparison showed that all Car Make prices were statistically different from each other except for the three groups of BMW and Audi, Toyota and Ford, and Toyota and Hyundai. This analysis revealed that the only Car Makes that have statistically similar prices are Toyota-Hyundai and BMW-Audi. It is important to note that Hyundai and Ford would be statistically different at a 90% confidence but the original alpha was set to .05.
+
+```{r}
+ggplot(data, aes(x=fuelType, y=price, color=fuelType)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Price Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+Next, the price of the cars were compared to their respective fuel types. The box plot showed a strong right skew in the data but there was slightly overlap of the three boxes. 
+
+```{r}
+anovaRes = aov(price ~ fuelType, data=data)
+names(anovaRes)
+summary(anovaRes)
+```
+The ANOVA test on price of cars by fuel type revealed a p-value of <2e-16 which indicated there was a statistical difference between groups of fuel types by prices.
+
+```{r}
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
+```
+The Tukey pairwise comparison revealed Petrol to be statistically different from Diesel and Hybrid.
+```{r}
+ggplot(data, aes(x=Car.Make, y=mileage, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "Mileage Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+The mileage of the cars were compared to their respective Car Makes. The box plot showed a strong right skew in the data but there was slightly overlap of the three boxes. It appeared that many of the Car Makes had similar mileage numbers as they tended to overlap a similar range of data.
+```{r}
+anovaRes = aov(mileage ~ Car.Make, data=data)
+names(anovaRes)
+summary(anovaRes)
+```
+The ANOVA test on mileage of Car Makes revealed a p-value of <2e-16 which indicated there was a statistical difference between groups of fuel types by prices.
+
+```{r}
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
+```
+The pairwise comparison revealed the following groups to not be statistically similar to each other were BMW-Audi, Toyota-Ford, Vauxhall-Ford, Mercedes-Hyundai, Toyota-Hyundai, Volkswagen-Hyundai, Toyota-Mercedes, Volkswagen-Mercedes, Vauxhall-Toyota, and Volkswagen-Toyota. 
+```{r}
+ggplot(data, aes(x=Car.Make, y=mpg, color=Car.Make)) +
+  geom_boxplot()+
+  scale_x_discrete(labels = abbreviate)+
+  labs(title = "MPG Box Plot Per Car Make")+
+  theme_minimal()
+
+```
+A box plot chart was created for mpg and Car Make. Each of the groups showed outliers in the upper quartile range of the data. Most of the means of mpg for each of the Car Makes was around 50.
+```{r}
+anovaRes = aov(mpg ~ Car.Make, data=data)
+names(anovaRes)
+summary(anovaRes)
+```
+The ANOVA test did reveal there was a statistical difference between the groups of Car Makes by mpg as the p-value was <2e-16. 
+```{r}
+tukeyAoV <- TukeyHSD(anovaRes)
+tukeyAoV
+```
+The Tukey test revealed the mpg of Car Makes for the following pairwise comparisons to be statistically similar: Skoda-BMW andVolkswagen-Hyndai. The other pairwise comparisons were all statistically different.
+
+```{r}
+# read in linear model data 
+data_df <- read.csv("/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/Bayesian_Computing_Final_Project/Linear_model_data.csv")
+drop <- c("X") #removed 
+data_df = data_df[,!(names(data_df) %in% drop)]
+
+# check for Multicollinearity 
+# create correlation plot of data 
+# subset categorical data and quantiative data to check for correlation between price
+library(ggcorrplot)
+#loadPkg(ggcorrplot)
+data_new_quant <- subset(data_df, select = c('price','mileage','tax','mpg','engineSize'))
+corr_quant <- round(cor(data_new_quant), 1)
+p.mat_quant <- cor_pmat(corr_quant, method = 'pearson')
+#ggcorrplot(corr_quant, hc.order=TRUE,lab = TRUE, p.mat = p.mat_quant)+ labs(title = "Correlation Plot of Quantiative data")
+ggcorrplot(corr_quant, hc.order=TRUE,lab = TRUE)+ labs(title = "Correlation Plot of Quantiative data")
+
+# categorical data correlation plot 
+data_clean_cat <- subset(data_df, select = c('year_2008','year_2009','year_2010','year_2011','year_2012','year_2013',
+                                        'year_2014','year_2015','year_2016','year_2017','year_2018','year_2019','year_2020',
+                                        'transmission_Automatic','transmission_Manual','transmission_Semi.Auto',
+                                        'fuelType_Diesel','fuelType_Hybrid','fuelType_Petrol','Car.Make_Audi','Car.Make_BMW',                         'Car.Make_Ford','Car.Make_Hyundai','Car.Make_Mercedes','Car.Make_Skoda','Car.Make_Toyota','Car.Make_Vauxhall','Car.Make_Volkswagen'))
+# make categorical data numeric
+data_clean_cat<- as.data.frame(lapply(data_clean_cat, as.numeric))
+corr_cat <- round(cor(data_clean_cat), 2) 
+p.mat_cat <- cor_pmat(corr_cat, method = 'spearman') # use Spearman correlation for large dataset of categorical features
+ggcorrplot(corr_cat, lab = TRUE) + labs(title = "Correlation Plot of Categorical data")
+# it appears that only fuelType_Petrol and fuelType_Diesel  are highly correlated with each other at -.94 so they were dropped from the data frame
+
+
+```
+Correlation matrices were constructed to compare the categorical data and the quantitative data. This step was implemented to check for multicollinearity between the variables. For the quantitative correlation comparisons, Pearson's correlation coefficient was utilized and it revealed engine size to have the strongest correlation with price at 0.6. This was followed by mileage at -.4, tax at 0.3 and mpg at -.3. Although these correlations to price are not very strong, They do have a moderate correlation with the target variable. Next the categorical data was compared using Spearman's correlation coefficient. Only the variables of fuelType_Petrol and fuelType_Diesel had a storng correlation coefficitent of -0.94.
+```{r}
+#check correlation of categorical data with price 
+loadPkg(ltm)
+print('the Point-Biserial Correlation for price and year_2008 is' )
+biserial.cor(data_df$price, data_df$year_2008, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2008 is' )
+biserial.cor(data_df$price, data_df$year_2009, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2009 is' )
+biserial.cor(data_df$price, data_df$year_2010, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2010 is' )
+biserial.cor(data_df$price, data_df$year_2011, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2011 is' )
+biserial.cor(data_df$price, data_df$year_2012, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2012 is' )
+biserial.cor(data_df$price, data_df$year_2013, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2013 is' )
+biserial.cor(data_df$price, data_df$year_2014, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2014 is' )
+biserial.cor(data_df$price, data_df$year_2015, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2015 is' )
+biserial.cor(data_df$price, data_df$year_2016, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2016 is' )
+biserial.cor(data_df$price, data_df$year_2017, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2017 is' )
+biserial.cor(data_df$price, data_df$year_2018, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2018 is' )
+biserial.cor(data_df$price, data_df$year_2019, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and year_2019 is' )
+biserial.cor(data_df$price, data_df$year_2020, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and transmission_Automatic is' )
+biserial.cor(data_df$price, data_df$transmission_Automatic, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and transmission_Manual is' )
+biserial.cor(data_df$price, data_df$transmission_Manual, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and transmission_Semi.Auto is' )
+biserial.cor(data_df$price, data_df$transmission_Semi.Auto, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and fuelType_Diesel is' )
+biserial.cor(data_df$price, data_df$fuelType_Diesel, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and fuelType_Hybrid is' )
+biserial.cor(data_df$price, data_df$fuelType_Hybrid, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Audi is' )
+biserial.cor(data_df$price, data_df$Car.Make_Audi, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_BMW is' )
+biserial.cor(data_df$price, data_df$Car.Make_BMW, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Ford is' )
+biserial.cor(data_df$price, data_df$Car.Make_Ford, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Hyundai is' )
+biserial.cor(data_df$price, data_df$Car.Make_Hyundai, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Mercedes is' )
+biserial.cor(data_df$price, data_df$Car.Make_Mercedes, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Skoda is' )
+biserial.cor(data_df$price, data_df$Car.Make_Skoda, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Toyota is' )
+biserial.cor(data_df$price, data_df$Car.Make_Toyota, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Vauxhall is' )
+biserial.cor(data_df$price, data_df$Car.Make_Vauxhall, use = c("all.obs"))
+print('the Point-Biserial Correlation for price and Car.Make_Volkswagen is' )
+biserial.cor(data_df$price, data_df$Car.Make_Volkswagen, use = c("all.obs"))
+# there ddid not appear to be any high correlation between price and the categorical data
+head(data_clean_cat)
+```
+The final correlation calculation was the Point-Biserial Correlation. This correlation calculation was utilized as the researchers were interested in seeing the relationship between the target value of price and how it related to the different categorical data values. The categorical values that had the strongest correlation with price were transmission_Manual at 0.55, transmission_Semi.Auto at -.412. The other variables had a much lower correlation with the price data. 
+
+
+
+
+
+
+
+
+
