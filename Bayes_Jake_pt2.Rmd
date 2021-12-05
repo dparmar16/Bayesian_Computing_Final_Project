@@ -49,16 +49,6 @@ loadPkg(data.table)
 set.seed(42)
 data_df <- read.csv("/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/Bayesian_Computing_Final_Project/Linear_model_data.csv")
 data_df$id <- sample(98439, size = nrow(data_df), replace = TRUE)
-#data_df <- read.csv("/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/uk_used_cars.csv")
-#str(data)
-#summary(data)
-# 9353 NA values need to remove them 
-#nrow(data) # 108540 rows with NA values
-#data_clean <- data[complete.cases(data), ] # removes NA values, rename as 'data_clean'
-#head(data_clean) # check to see if NA values are removed 
-#nrow(data_clean) #99187 rows with no NA values 
-#x <- (1-nrow(data_clean)/nrow(data))* 100
-#x # 8.62% of the data had na values
 drop <- c("X")
 data_df = data_df[,!(names(data_df) %in% drop)]
 head(data_df)
@@ -79,42 +69,9 @@ head(data_df)
 ```
 
 
-
-
 ```{r}
-# # categorical data correlation plot 
-# data_clean_cat <- subset(df, select = c('model','price','transmission','fuelType','Car.Make'))
-# # make categorical data numeric
-# data_new_cat <- sapply(data_clean_cat, unclass)
-# corr_cat <- round(cor(data_new_cat), 1) 
-# p.mat_cat <- cor_pmat(corr_cat, method = 'spearman') # use Spearman correlation for large dataset of categorical features
-# ggcorrplot(corr_cat, hc.order=TRUE,p.mat=p.mat_cat, lab = TRUE) + labs(title = "  Correlation Plot of Categorical data")
-
-# cor(data_new_cat$price, data_new_cat$model,
-#   method = "spearman"
-# )
-
-```
-
-
-
-```{r}
-# normalize Price 
-# library(MASS)
-# bc <- boxcox(data_clean$price ~ x)
-# (lambda <- bc$x[which.max(bc$y)])
-head(df)
-```
-
-
-```{r}
-# Linear Regression Model
-# qjaw <- lm(bone ~ age + I(age ^ 2), data = jaws)
-# summary(qjaw)
-# plot(jaws)
-# grid <- seq(0, 60, 0.01)
-# lines(grid, predict(qjaw, data.frame(age = grid)), col = "red")
-
+# Linear Model 
+set.seed(42)
 #pick model from stepwise regression 
 library(tidyverse)
 library(caret)
@@ -149,8 +106,7 @@ data_df$Car.Make_Vauxhall <- as.factor(data_df$Car.Make_Vauxhall)
 data_df$Car.Make_Volkswagen <- as.factor(data_df$Car.Make_Volkswagen)
 # split linear data into train and test
 smp_size <- floor(0.75 * nrow(data_df)) # 75/25 for train/test split 
-# set the seed to make your partition reproducible
-set.seed(123)
+
 train_ind <- sample(seq_len(nrow(data_df)), size = smp_size)
 train <- data_df[train_ind, ]
 test <- data_df[-train_ind, ]
@@ -159,11 +115,6 @@ head(data_df)
 ```
 
 ```{r}
-# need assistance fixing this
-op <- par(oma=c(5,7,1,1))
-pairs(data)
-par(op)
-
 #quick descriptive stats on price value
 ybar<- mean(data_df$price)
 std <- sd(data_df$price)
@@ -172,11 +123,7 @@ n   <- length(data_df$price)
 descriptive <- c(n,ybar,std,s2)
 names(descriptive) <- c("N","Ybar","std","s^2")
 descriptive
-
-
 ```
-
-
 
 
 
@@ -200,14 +147,14 @@ model_full_vif
 test_x <- test[, !names(test) %in% c("price")] 
 y_pred= predict(model_full, test_x)
 
-resid= test$price-y_pred
+resid_full= test$price-y_pred
 n = length(resid)
 # Calculate MSE
-MSE = 1/ (n - 2) * sum((resid ^ 2))
+MSE = 1/ (n - 2) * sum((resid_full ^ 2))
 options(digits=15) # make sure MSE is listed out completely
 print('MSE is')
 MSE
-plot(resid_full, x_lab= 'MSE', main='residual plot of model')
+plot(resid_full, x_lab= 'MSE', main='residual Plot of Full Frequentist Model')
 par(mfrow = c(2, 2))
 plot(model_full)
 ```
@@ -247,61 +194,67 @@ adj_model_vif
 # Standardize data
 train_2 <- train %>% mutate_at(c("price", "mileage", "tax", "mpg", "engineSize" ), ~(scale(.) %>% as.vector))
 head(train_2)
+nrow(train)
+train <- sample_n(train, 100)
 ```
 
 ```{r}
 # jags model 
 library(rjags)
-dataList <- list(
-         y=train$price,
-                  y_2008=train$year_2008,
-                  y_2009=train$year_2009,
-                  y_2010=train$year_2010,
-                  y_2011=train$year_2011,
-                  y_2012=train$year_2012,
-                  y_2013=train$year_2013,
-                  y_2014=train$year_2014,
-                  y_2015=train$year_2015,
-                  y_2016=train$year_2016,
-                  y_2017=train$year_2017,
-                  y_2018=train$year_2018,
-                  y_2019=train$year_2019,
-                  y_2020=train$year_2020,
-                  TA=train$transmission_Automatic,
-                  TM=train$transmission_Manual,
-                  TS=train$transmission_Semi.Auto,
-                  mileage=train$mileage,
-                  FTD=train$fuelType_Diesel,
-                  FTH=train$fuelType_Hybrid,
-                  FTP=train$fuelType_Petrol,
-                  tax=train$tax,
-                  mpg=train$mpg,
-                  ES=train$engineSize,
-                  CMA=train$Car.Make_Audi,
-                  CMB=train$Car.Make_BMW,
-                  CMF=train$Car.Make_Ford,
-                  CMH=train$Car.Make_Hyundai,
-                  CMM=train$Car.Make_Mercedes,
-                  CMS=train$Car.Make_Skoda,
-                  CMT=train$Car.Make_Toyota,
-                  CMVA=train$Car.Make_Vauxhall,
-                  CMVO=train$Car.Make_Volkswagen,
-                 N=length(train$price),
-                 sdY = sd(train$price)
-                 )
+y=as.vector(train$price)
+y_2008=as.vector(train$year_2008)
+y_2009=as.vector(train$year_2009)
+y_2010=as.vector(train$year_2010)
+y_2011=as.vector(train$year_2011)
+y_2012=as.vector(train$year_2012)
+y_2013=as.vector(train$year_2013)
+y_2014=as.vector(train$year_2014)
+y_2015=as.vector(train$year_2015)
+y_2016=as.vector(train$year_2016)
+y_2017=as.vector(train$year_2017)
+y_2018=as.vector(train$year_2018)
+y_2019=as.vector(train$year_2019)
+y_2020=as.vector(train$year_2020)
+TA=as.vector(train$transmission_Automatic)
+TM=as.vector(train$transmission_Manual)
+TS=as.vector(train$transmission_Semi.Auto)
+mileage=as.vector(train$mileage)
+FTD=as.vector(train$fuelType_Diesel)
+FTH=as.vector(train$fuelType_Hybrid)
+FTP=as.vector(train$fuelType_Petrol)
+tax=as.vector(train$tax)
+mpg=as.vector(train$mpg)
+ES=as.vector(train$engineSize)
+CMA=as.vector(train$Car.Make_Audi)
+CMB=as.vector(train$Car.Make_BMW)
+CMF=as.vector(train$Car.Make_Ford)
+CMH=as.vector(train$Car.Make_Hyundai)
+CMM=as.vector(train$Car.Make_Mercedes)
+CMS=as.vector(train$Car.Make_Skoda)
+CMT=as.vector(train$Car.Make_Toyota)
+CMVA=as.vector(train$Car.Make_Vauxhall)
+CMVO=as.vector(train$Car.Make_Volkswagen)
+N=length(train$price)
+
+
+dataList <- list("y"=y, "y_2008"= y_2008, "y_2009"=y_2009, "y_2010"=y_2010, "y_2011"=y_2011, 
+                 "y_2012"=y_2012, "y_2013"=y_2013, "y_2014"=y_2014, "y_2015"=y_2015, "y_2016"=y_2016, 
+                 "y_2017"=y_2017, "y_2018"=y_2018, "y_2019"=y_2019, "y_2020"=y_2020, 
+                 "TA"=TA, "TM"=TM, "TS"=TS,"mileage"=mileage, "FTD"=FTD, "FTH"=FTH, "FTP"=FTP, "tax"=tax, 
+                 "mpg"=mpg, "ES"=ES, "CMA"=CMA, "CMB"=CMB, "CMF"=CMF, "CMH"=CMH, "CMM"=CMM, "CMS"=CMS, 
+                 "CMT"=CMT, "CMVA"=CMVA, "CMVO"=CMVO, "N"=N)
 ```
 
 
 ```{r}
 model_1 <- "model{
   for(i in 1:N){
-      mu[i] = b0 + b1 * y_2008[i] + b2 * y_2009[i] +b3*y_2010[i]+ b4* y_2011[i] + b5*y_2012[i]  + b6 * y_2013[i] +
+    y[i] ~ dnorm(b0 + b1 * y_2008[i] + b2 * y_2009[i] +b3*y_2010[i]+ b4* y_2011[i] + b5*y_2012[i]  + b6 * y_2013[i] +
       b7* y_2014[i] + b8*y_2015[i] + b9* y_2016[i] + b10 * y_2017[i] + b11*y_2018[i]
     + b12*y_2019[i] + b13*y_2020[i] + b14*TA[i] + b15*TM[i] + b16*TS[i]
     + b17*mileage[i] + b18*FTD[i] + b19*FTH[i] + b20*FTP[i] + b21*tax[i] 
     + b22*mpg[i] + b23*ES[i] + b24*CMA[i] + b25*CMB[i] + b26*CMF[i] + b27*CMH[i] 
-    + b28*CMM[i] + b29*CMS[i] + b30*CMT[i] + b31*CMVA[i] + b32*CMVO[i] 
-    y[i] ~ dnorm(mu[i], tau)
+    + b28*CMM[i] + b29*CMS[i] + b30*CMT[i] + b31*CMVA[i] + b32*CMVO[i], invsigma2)
   }
   b0 ~ dnorm(0, 0.0001)
   b1 ~ dnorm(0, 0.0001)
@@ -326,8 +279,9 @@ model_1 <- "model{
   b20 ~ dnorm(0, 0.0001)
   b21 ~ dnorm(0, 0.0001)
   b22 ~ dnorm(0, 0.0001)
+  b23 ~ dnorm(0, 0.0001)
   b24 ~ dnorm(0, 0.0001)
-  b15 ~ dnorm(0, 0.0001)
+  b25 ~ dnorm(0, 0.0001)
   b26 ~ dnorm(0, 0.0001)
   b27 ~ dnorm(0, 0.0001)
   b28 ~ dnorm(0, 0.0001)
@@ -335,51 +289,26 @@ model_1 <- "model{
   b30 ~ dnorm(0, 0.0001)
   b31 ~ dnorm(0, 0.0001)
   b32 ~ dnorm(0, 0.0001)
-  tau ~ dgamma(0.01, 0.01)
-  s <- 1 / sqrt(tau)          
+  invsigma2 ~ dgamma(.01, .01)
+  s <- sqrt(pow(invsigma2, -1))         
   }"
-
-
-# initsList = list(list("b0"=mean(train$price), "b1"=0, "b2"=0, "b3"=0,"b4"=0,"b5"=0,"b6"=0,
-#                       "b7"=0,"b8"=0,"b9"=0,"b10"=0,"b11"=0,"b12"=0,"b13"=0,"b14"=0,"b15"=0,"b16"=0,"b17"=0,"b18"=0,
-#                       "b19"=0,"b20"=0,"b21"=0,"b22"=0,"b23"=0,"b24"=0,"b25"=0,"b26"=0,"b27"=0,"b28"=0,"b29"=0,"b30"=0,
-#                       "b31"=0,"b32"=0,"sigma"=sd(train$price)), 
-#                  list("b0"=mean(train$price), "b1"=rnorm(1,50,5), "b2"=0, "b3"=0,"b4"=0,"b5"=0,"b6"=0,
-#                       "b7"=0,"b8"=0,"b9"=0,"b10"=0,"b11"=0,"b12"=0,"b13"=0,"b14"=0,"b15"=0,"b16"=0,"b17"=0,"b18"=0,
-#                       "b19"=0,"b20"=0,"b21"=0,"b22"=0,"b23"=0,"b24"=0,"b25"=0,"b26"=0,"b27"=0,"b28"=0,"b29"=0,"b30"=0,
-#                       "b31"=0,"b32"=0,"sigma"=sd(train$price)), 
-#                  
-#                  
-#                  
-#                  
-#                  
-#                  
-#                  list("b0"=rnorm(1,50,5),   "b1"=rnorm(1,-2,1), "b2"=rnorm(1,2,1), "sigma"=sd(nels$math)), 
-#                  list("b0"=rnorm(1,50,5),   "b1"=rnorm(1,1,1), "b2"=rnorm(1,1,1),  "sigma"=runif(1,0,10)), 
-#                  list("b0"=rnorm(1,50,6),   "b1"=rnorm(1,0,1), "b2"=rnorm(1,0,1),  "sigma"=runif(1,0,10)) 
-#                  )
-# 
-# initsList = list(list("b0"=mean(nels$math), "b1"=0, "b2"=0, "b3"=0, "sigma"=sd(nels$math)), 
-#                  list("b0"=rnorm(1,50,5),   "b1"=rnorm(1,-2,1), "b2"=rnorm(1,2,1), "b3"=.3, "sigma"=sd(nels$math)), 
-#                  list("b0"=rnorm(1,50,5),   "b1"=rnorm(1,1,1), "b2"=rnorm(1,1,1),  "b3"=.5,  "sigma"=runif(1,0,10)), 
-#                  list("b0"=rnorm(1,50,6),   "b1"=rnorm(1,0,1), "b2"=rnorm(1,0,1),  "b3"=-.3,  "sigma"=runif(1,0,10)) 
-#                  )
-
-
-
 ```
 
 
 ```{r}
 #delpoy the model
-jags_1 <- jags.model(textConnection(model_1), data =dataList, n.chains=3,n.adapt=3)
-update(jags_1, 100)
+loadPkg(runjags)
+jags_1 <- jags.model(textConnection(model_1), n.chains = 3, data =dataList, quiet=TRUE)
+```
+
+```{r}
+update(jags_1, 10)
 jags_sim_1 <- coda.samples(model = jags_sim_1, variable.names = c("b0", "b1", "b2","b3","b4",
                                                                   "b5","b6","b7","b8","b9","b10",
                                                                   "b11","b12","b13","b14","b15",
                                                                   "b16","b17","b18","b19","b20",
                                                                   "b21","b22","b23","b24","b25","b26","b27",
-                                                                  "b28","b29","b30","b31","b32","s"), n.iter = 100)
+                                                                  "b28","b29","b30","b31","b32","s"), n.iter = 10)
 
 summary(jags_sim_1)
 ```
