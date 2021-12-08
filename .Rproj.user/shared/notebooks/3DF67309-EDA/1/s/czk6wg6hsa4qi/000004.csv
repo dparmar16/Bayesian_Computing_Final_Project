@@ -1,0 +1,2 @@
+"0","#data_df = subset(data_df, select = -c(transmission_Other,fuelType_Other, fuelType_Electric, Car.Make_Ford Focus, Car.Make_Mercedes C Class) )"
+"0","#data_df"

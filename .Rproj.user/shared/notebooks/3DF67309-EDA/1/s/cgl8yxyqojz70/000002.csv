@@ -1,0 +1,4 @@
+"0","library(dplyr)"
+"0","data %>% "
+"0","  group_by(Car.Make) %>%"
+"0","  summarise_at(vars(price), list(mean = mean))"

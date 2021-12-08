@@ -1,0 +1,5 @@
+"0","ggplot(data, aes(x=Car.Make, y=price, color=Car.Make)) +"
+"0","  geom_boxplot()+"
+"0","  scale_x_discrete(labels = abbreviate)+"
+"0","  labs(title = ""Price Box Plot Per Car Make"")+"
+"0","  theme_minimal()"

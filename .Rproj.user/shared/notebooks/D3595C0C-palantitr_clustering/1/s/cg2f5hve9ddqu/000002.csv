@@ -1,0 +1,17 @@
+"0","```r
+library(cluster)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(Rtsne)
+sil_width <- c(NA)
+for(i in 2:100){  
+  pam_fit <- pam(gower_dist, diss = TRUE, k = i)  
+  sil_width[i] <- pam_fit$silinfo$avg.width  
+}
+plot(1:100, sil_width,
+     xlab = \"Number of clusters\",
+     ylab = \"Silhouette Width\")
+lines(1:100, sil_width)
+
+```"
