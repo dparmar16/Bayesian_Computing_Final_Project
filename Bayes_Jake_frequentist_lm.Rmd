@@ -1,0 +1,135 @@
+---
+title: "Bayesian Linear Regression Model"
+author: "Jake Lieberfarb"
+date: "12/8/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  pkg <- ifelse(!character.only, as.character(substitute(pkg)) , pkg)  
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(substitute(pkg),dep=T); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+loadPkg(mltools)
+loadPkg(data.table)
+```
+
+```{r}
+#import necessary Linear model data
+set.seed(42)
+data_df <- read.csv("/Users/jakelieberfarb/Desktop/college/Grad (2021-2022)/Bayesian DS/Project/Bayesian_Computing_Final_Project/Linear_model_data.csv")
+data_df$id <- sample(98439, size = nrow(data_df), replace = TRUE)
+drop <- c("X")
+data_df = data_df[,!(names(data_df) %in% drop)]
+head(data_df)
+```
+
+```{r}
+# Linear Model 
+set.seed(42)
+#pick model from stepwise regression 
+library(tidyverse)
+library(caret)
+library(leaps)
+data_df$year_2008 <- as.factor(data_df$year_2008)
+data_df$year_2009 <- as.factor(data_df$year_2009)
+data_df$year_2010 <- as.factor(data_df$year_2010)
+data_df$year_2011 <- as.factor(data_df$year_2011)
+data_df$year_2012 <- as.factor(data_df$year_2012)
+data_df$year_2013 <- as.factor(data_df$year_2013)
+data_df$year_2014 <- as.factor(data_df$year_2014)
+data_df$year_2015 <- as.factor(data_df$year_2015)
+data_df$year_2016 <- as.factor(data_df$year_2016)
+data_df$year_2017 <- as.factor(data_df$year_2017)
+data_df$year_2018 <- as.factor(data_df$year_2018)
+data_df$year_2019 <- as.factor(data_df$year_2019)
+data_df$year_2020 <- as.factor(data_df$year_2020)
+data_df$transmission_Automatic <- as.factor(data_df$transmission_Automatic)
+data_df$transmission_Manual <- as.factor(data_df$transmission_Manual)
+data_df$transmission_Semi.Auto <- as.factor(data_df$transmission_Semi.Auto)
+data_df$fuelType_Diesel <- as.factor(data_df$fuelType_Diesel)
+data_df$fuelType_Hybrid <- as.factor(data_df$fuelType_Hybrid)
+data_df$fuelType_Petrol <- as.factor(data_df$fuelType_Petrol)
+data_df$Car.Make_Audi <- as.factor(data_df$Car.Make_Audi)
+data_df$Car.Make_BMW <- as.factor(data_df$Car.Make_BMW)
+data_df$Car.Make_Ford <- as.factor(data_df$Car.Make_Ford)
+data_df$Car.Make_Hyundai <- as.factor(data_df$Car.Make_Hyundai)
+data_df$Car.Make_Mercedes <- as.factor(data_df$Car.Make_Mercedes)
+data_df$Car.Make_Skoda <- as.factor(data_df$Car.Make_Skoda)
+data_df$Car.Make_Toyota <- as.factor(data_df$Car.Make_Toyota)
+data_df$Car.Make_Vauxhall <- as.factor(data_df$Car.Make_Vauxhall)
+data_df$Car.Make_Volkswagen <- as.factor(data_df$Car.Make_Volkswagen)
+# split linear data into train and test
+smp_size <- floor(0.75 * nrow(data_df)) # 75/25 for train/test split 
+
+train_ind <- sample(seq_len(nrow(data_df)), size = smp_size)
+train <- data_df[train_ind, ]
+test <- data_df[-train_ind, ]
+head(data_df)
+nrow(train)
+```
+
+
+
+```{r}
+# built full LM frequentist model
+model_full <- lm(price~ year_2008+ year_2009+ year_2010+ year_2011+ year_2012+
+                   year_2013+year_2014+year_2015+year_2016+year_2017+year_2018+
+                   year_2019+ year_2020, data = train)
+summary(model_full)
+model_full_vif = faraway::vif(model_full)
+#none of the coefficients have a significantly high vif factor
+model_full_vif
+#names(model_full)
+```
+
+```{r}
+#loadPkg(BAS)
+# Obtain residuals and n
+#still not working
+test_x <- train[, !names(train) %in% c("price")] 
+y_pred= predict(model_full, test_x)
+
+Residuals= test$price-y_pred
+n = length(resid)
+# Calculate MSE
+MSE = 1/ (n - 2) * sum((Residuals ^ 2))
+options(digits=15) # make sure MSE is listed out completely
+print('MSE is')
+MSE
+plot(Residuals, x_lab= 'MSE', main='Residual Plot of Frequentist Model')
+par(mfrow = c(2, 2))
+plot(model_full)
+```
+
+
