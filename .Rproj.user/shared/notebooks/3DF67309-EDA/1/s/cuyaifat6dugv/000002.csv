@@ -1,0 +1,8 @@
+"0","# Add new Price_Range variable (Dependent Variable for Logistice Regression)"
+"0","data<- data %>% mutate(Price_Range ="
+"0","                     case_when(price <= 9999 ~  ""Low"", "
+"0","                               price > 9999 & price <= 14495 ~ ""Medium"","
+"0","                               price > 14495 & price <= 20870 ~ ""High"","
+"0","                               price > 20870  ~ ""Luxury"")"
+"0",")"
+"0",""

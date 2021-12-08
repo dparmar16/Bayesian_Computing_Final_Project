@@ -1,0 +1,5 @@
+"0","library(tidyr)"
+"0","data <- read.csv(""Data/uk_used_cars.csv"")"
+"0","data<- data[!(data$year== 2060),]"
+"0","data<- data[rowSums(is.na(data)) == 0,]"
+"0","data"

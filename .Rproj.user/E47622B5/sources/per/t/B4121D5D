@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1637810049891.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2717257547",
+    "id" : "B4121D5D",
+    "lastKnownWriteTime" : 1637461448,
+    "last_content_update" : 1637461448,
+    "path" : "~/Bayesian Computing/Bayesian/Bayesian/files/STAT 4198 Class Apr 21.R",
+    "project_path" : null,
+    "properties" : {
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

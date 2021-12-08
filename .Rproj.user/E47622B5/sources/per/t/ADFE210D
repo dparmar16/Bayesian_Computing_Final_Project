@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1637464364253.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2308051963",
+    "id" : "ADFE210D",
+    "lastKnownWriteTime" : 1582249026,
+    "last_content_update" : 1637464389376,
+    "path" : "~/Intro_Data_Science/Anova_202002 (1).Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "78,13",
+        "last_setup_crc32" : "",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

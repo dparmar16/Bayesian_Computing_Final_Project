@@ -1,2 +1,6 @@
-# Bayesian_Computing_Final_Project
-Final project for Bayesian Computing at GWU.
+# Bayesian Analysis on UK Used Car Prices 2008-2020
+## By Abdulaziz Gebril, Jake Lieberfarb, and Divya Parmar
+
+For this project, the dataset of [100,000 used car sales](https://www.google.com/url?q=https://www.kaggle.com/adityadesai13/used-car-dataset-ford-and-mercedes?select%3Dbmw.csvwas&sa=D&source=docs&ust=1638994792591000&usg=AOvVaw2LFWBUXv_naEQyXRcv_tmw) in the United Kingdom analyzed. Originally, there were 9 total variables with 108540 rows. The variable of 'model' was dropped from the analysis as there were too many classes to build a model around it. 
+The multiple csv files from Kaggle were compiled and identified with a new variable 'Car.Make'. The dependent variable was 'price'. The four categorical independent variables were 'year', 'transmission', 'fuelType', and 'Car.Make'. the four quantitative independent variables were 'mileage', 'tax', 'mpg' and 'engineSize'. One-hot encoding was applied to the categorical data and the final dataframe had a total of 32 columns. Outliers were kept in the analysis as the researcher wanted to avoid class imbalance for the Car.Make categories. The goal of this project was to construct Bayesian based Hierarchical, Logistic, and Linear models and compare them to frequentist versions to see if more accurate evaluations could be made about the price of used cars in the United Kingdom.
+

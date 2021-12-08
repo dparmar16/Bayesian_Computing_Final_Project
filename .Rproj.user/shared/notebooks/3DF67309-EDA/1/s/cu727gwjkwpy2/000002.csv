@@ -1,0 +1,3 @@
+"0",""
+"0","m3 <- 1 / (1 + exp(-(pricemcmc$b0 + 0 * pricemcmc$b1)))"
+"0","plot(density(m3))"

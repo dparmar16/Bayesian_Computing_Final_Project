@@ -1,0 +1,7 @@
+"0","library(ggplot2)"
+"0",""
+"0","ggplot(data, aes(x=Car.Make))+"
+"0","  geom_bar(width=0.7, fill=""steelblue"")+"
+"0","scale_x_discrete(labels = abbreviate)+"
+"0","  labs(title = ""Car Make Distribution plot"")+"
+"0","  theme_minimal()"

@@ -1,0 +1,4 @@
+"0","loadPkg(""ggplot2"")"
+"0","ggplot(PlantGrowth, aes(x=group, y=weight)) + "
+"0","  geom_boxplot( colour=c(""#ff0000"",""#11cc11"",""#0000ff""), outlier.shape=8, outlier.size=4) +"
+"0","  labs(title=""Plant Weight (oz) between the control and the two treatment groups"", x=""Control / Treatment"", y = ""Weight (oz)"")"

@@ -1,0 +1,8 @@
+"0","# create correlation plot of data "
+"0","# subset categorical data and quantiative data to check for correlation between price"
+"0","library(ggcorrplot)"
+"0","#loadPkg(ggcorrplot)"
+"0","data_new_quant <- subset(df, select = c('year','price','mileage','tax','mpg','engineSize'))"
+"0","corr_quant <- round(cor(data_new_quant), 1)"
+"0","p.mat_quant <- cor_pmat(corr_quant, method = 'pearson')"
+"0","ggcorrplot(corr_quant, hc.order=TRUE,lab = TRUE, p.mat = p.mat_quant)+ labs(title = ""Correlation Plot of Quantiative data"")"

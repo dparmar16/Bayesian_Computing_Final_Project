@@ -1,0 +1,4 @@
+"0","```r
+write.csv(x=pam_df, file=\"palantir_r_cluster_2.csv\")
+
+```"

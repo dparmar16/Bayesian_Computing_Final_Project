@@ -1,0 +1,4 @@
+"0","# drop model and price"
+"0","drops <- c(""model"",""price"")"
+"0","data<- data[ , !(names(data) %in% drops)]"
+"0","data"

@@ -1,0 +1,6 @@
+"0","```r
+dbscan_fit <- dbscan(gower_mat, eps= 0.7 , minPts=3)
+dbscan_df <- df %>%
+  mutate(cluster = dbscan_fit$cluster, geoName_1=new_data$Ã¯..geoName_1, Online_Dating_Service= new_data$Online_Dating_Service, online_Dating_App= new_data$Online_Dating_App, Start_Date= new_data$StartDate, End_Date= new_data$EndDate)
+print(dbscan_df)
+```"

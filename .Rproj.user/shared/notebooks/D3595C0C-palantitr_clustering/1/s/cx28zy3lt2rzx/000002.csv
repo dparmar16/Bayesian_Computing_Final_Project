@@ -1,0 +1,4 @@
+"0","```r
+new_data <- new_data[new_data$Score > 10, ]
+print(new_data)
+```"

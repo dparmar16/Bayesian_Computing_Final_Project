@@ -1,0 +1,5 @@
+"0","```r
+
+cluster_city <- pam_df[pam_df$geoName_1 == \"Boston MA-Manchester NH\", ]
+print(cluster_city)
+```"

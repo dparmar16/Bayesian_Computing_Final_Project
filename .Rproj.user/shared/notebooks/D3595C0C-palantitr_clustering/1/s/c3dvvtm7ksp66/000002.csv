@@ -1,0 +1,7 @@
+"0","```r
+data <- read.csv(\"Google Trends 2020 Data (1).csv\")
+col <- c(\"Ã¯..geoName_1\",\"Score\",\"Online_Dating_Service\",\"Online_Dating_App\",	\"Search_term\",	\"StartDate\",\"EndDate\")
+
+new_data <- data[col]
+print(new_data)
+```"

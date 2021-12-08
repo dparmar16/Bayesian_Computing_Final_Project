@@ -1,0 +1,7 @@
+"0","```r
+city <- merge(x= cluster_city, y=pam_df ,by=c(\"Search_term\", \"cluster\"), all.x = TRUE)
+city[\"score_diff\"] <- abs(city[\"Score.x\"]- city[\"Score.y\"])
+city<- city[city$score_diff < 20, ]
+
+print(city)
+```"

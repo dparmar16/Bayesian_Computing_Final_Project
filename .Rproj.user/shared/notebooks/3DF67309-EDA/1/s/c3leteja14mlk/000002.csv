@@ -1,0 +1,7 @@
+"0","# categorical data correlation plot "
+"0","data_clean_cat <- subset(df, select = c('model','price','transmission','fuelType','Car.Make'))"
+"0","# make categorical data numeric"
+"0","data_new_cat <- sapply(data_clean_cat, unclass)"
+"0","corr_cat <- round(cor(data_new_cat), 1) "
+"0","p.mat_cat <- cor_pmat(corr_cat, method = 'spearman') # use Spearman correlation for large dataset of categorical features"
+"0","ggcorrplot(corr_cat, hc.order=TRUE,p.mat=p.mat_cat, lab = TRUE) + labs(title = ""Correlation Plot of Categorical data"")"

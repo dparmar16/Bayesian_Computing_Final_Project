@@ -1,0 +1,115 @@
+x---
+title: "(One-way) Anova test"
+author: "GWU Intro to Data Science DATS 6101"
+date: "Feb, 2020"
+output:
+  html_document:
+    code_folding: hide
+    # number_sections: true
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+# knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basicfcn, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+# note that using this function requires quotes around the package name, as you would when installing packages.
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+# unload/detact package when done using it
+# detach_package = function(pkg, character.only = FALSE) { if(!character.only) { pkg <- deparse(substitute(pkg)) } search_item <- paste("package", pkg, sep = ":") while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } }
+```
+
+
+Let's try what we learned:
+
+```{r aov}
+loadPkg("MASS")
+surveyPulseSmoke = subset(survey, Pulse>0 & !is.na(Smoke), select=c('Pulse','Smoke'))  # remove NAs
+loadPkg("ggplot2")
+ggplot(surveyPulseSmoke, aes(x=Smoke, y=Pulse)) + 
+  geom_boxplot( colour=c("#ff0000","#11cc11","#0000ff","#ff00ff"), outlier.shape=8, outlier.size=4) +
+  labs(title="Pulse Rate for MASS data with different Smoke Habits", x="Smoke Habit", y = "Pulse rate")
+
+#plot(Pulse ~ Smoke, data=surveyPulseSmoke , main="Pulse Rate for MASS data with different Smoke Habits", col=c("#ff0000","#00ff00","#0000ff","#ff00ff") )
+
+anovaRes = aov(Pulse ~ Smoke, data=surveyPulseSmoke)
+anovaRes
+names(anovaRes)
+summary(anovaRes)
+```
+
+Let us have a do-over. The above charts are good, but could be better!! The variable "Smoke" is registered as factor, but it should be ordinal. Let us add the proper order to the variable and re-do the chart.
+
+```{r aov_re-do, include=T}
+str(surveyPulseSmoke)
+surveyPulseSmoke$Smoke <- factor(surveyPulseSmoke$Smoke, order=T, levels = c("Never","Occas","Regul","Heavy"))
+str(surveyPulseSmoke)
+loadPkg("ggplot2")
+ggplot(surveyPulseSmoke, aes(x=Smoke, y=Pulse)) + 
+  geom_boxplot( colour=c("#ff0000","#11cc11","#0000ff","#ff00ff"), outlier.shape=8, outlier.size=4) +
+  labs(title="Pulse Rate for MASS data with different Smoke Habits", x="Smoke Habit", y = "Pulse rate")
+
+#plot(Pulse ~ Smoke, data=surveyPulseSmoke , main="Pulse Rate for MASS data with different Smoke Habits", col=c("#00ff00","#0000ff","#ff00ff","#ff0000") )
+anovaRes = aov(Pulse ~ Smoke, data=surveyPulseSmoke)
+# anovaRes    # this does not give the easy-to-read result of the aov analysis
+names(anovaRes)
+summary(anovaRes)
+```
+
+
+```{r tukeyHSD_not_needed, eval=F}
+tukeySmokeAoV <- TukeyHSD(anovaRes)
+tukeySmokeAoV
+```
+
+Another example (see <https://rstudio-pubs-static.s3.amazonaws.com/181709_eec7a5bc24c04b8badeb297c4807109a.html> for example). The library/package agricolae might not be working with the new R version anymore. Let's try anyways.
+```{r agricolae}
+loadPkg("agricolae")
+data("PlantGrowth")
+head(PlantGrowth)
+str(PlantGrowth)
+```
+
+It is a simple sample dataset recording the plant growth (weight, after a fixed number of days) under three different groups: control group, treatment 1, and treatment 2.
+
+```{r}
+loadPkg("ggplot2")
+ggplot(PlantGrowth, aes(x=group, y=weight)) + 
+  geom_boxplot( colour=c("#ff0000","#11cc11","#0000ff"), outlier.shape=8, outlier.size=4) +
+  labs(title="Plant Weight (oz) between the control and the two treatment groups", x="Control / Treatment", y = "Weight (oz)")
+
+
+# Simple plots
+# plot(PlantGrowth$weight ~ PlantGrowth$group)   # OR
+# plot(weight ~ group, data=PlantGrowth, main="Plant Weight (oz) between the control and the two treatment groups", col=c("#00ff00","#ff00ff","#ff0000") )
+plant_aov = aov(weight ~ group, data = PlantGrowth)
+# plant_aov  # this does not give the easy-to-read result of the aov analysis
+summary(plant_aov)
+
+```
+
+Now with a small p-value, we should pursue to find out which pair(s) are different. So we use tukeyHSD.
+```{r tukeyHSD}
+tukeyAoV <- TukeyHSD(plant_aov)
+tukeyAoV
+```
+
+As we visually see from the boxplots, now confirmed with the tukey results, treatment 1 and 2 are pairwise considered having different means, while the other pairs are not significant at 0.05 level.
+
